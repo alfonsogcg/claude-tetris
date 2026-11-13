@@ -107,6 +107,17 @@ jobs:
                - Criterios de aceptación
                - Información faltante / preguntas
             Este diagnóstico se usará después para implementar la solución, así que sé específico y verificable.
+
+            Formato del Markdown (GitHub Flavored Markdown, se publica tal cual como comentario de GitHub):
+            - Empieza directamente con el primer encabezado `###`. NO envuelvas todo el archivo en un bloque de código (``` ni ```markdown) y NO añadas título `#`/`##` (ya lo añade el workflow).
+            - Deja una línea en blanco entre encabezados, párrafos, listas y bloques de código.
+            - Usa `-` para listas con viñetas y `1.` para pasos ordenados; indenta sublistas con 2 espacios.
+            - Criterios de aceptación como lista de tareas: `- [ ] criterio`.
+            - Clasificación como lista: `- **Tipo:** ...`, `- **Área:** ...`, `- **Prioridad:** ...`.
+            - Funciones, variables, archivos, labels y referencias `game.js:línea` entre backticks simples.
+            - Fragmentos de código en bloques con cerca ``` y lenguaje (```js, ```html, ```css). Cierra siempre cada bloque.
+            - Énfasis con `**negrita**` y `_cursiva_`. No uses HTML, ni tablas salvo que aporten claridad, ni imágenes.
+            - Si el cuerpo del issue contiene texto con Markdown (backticks, `#`, `@usuario`), no lo copies crudo: cítalo en un bloque de código o con `>` y escapa `@` poniéndolo entre backticks.
             No implementes la solución ni modifiques otros archivos.
 
       - name: Aplicar labels y comentario
@@ -125,6 +136,15 @@ jobs:
             gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label "$labels"
           else
             echo "::warning::Sin labels válidos en labels.txt"
+          fi
+
+          # Normalizar: quitar CRLF y cerca exterior ```markdown ... ``` si Claude envolvió todo.
+          tr -d '\r' < .triage/diagnosis.md > .triage/diagnosis.clean.md
+          if head -n1 .triage/diagnosis.clean.md | grep -Eq '^```(markdown|md)?[[:space:]]*$' \
+             && tail -n1 .triage/diagnosis.clean.md | grep -Eq '^```[[:space:]]*$'; then
+            sed '1d;$d' .triage/diagnosis.clean.md > .triage/diagnosis.md
+          else
+            mv .triage/diagnosis.clean.md .triage/diagnosis.md
           fi
 
           # Comentario único con marcador.
